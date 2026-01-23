@@ -2,10 +2,14 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import { adminDb } from "@/lib/firebaseAdmin";
+import { getAdminApp, getAdminDb } from "@/lib/firebaseAdmin";
 import { getAuth } from "firebase-admin/auth";
 
 export async function POST(req) {
+
+  getAdminApp();          // initializes Firebase Admin safely
+const adminDb = getAdminDb();
+
   try {
     // 1️⃣ SAFETY: req & headers always checked
     if (!req || !req.headers) {
