@@ -3,45 +3,30 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { getAuth } from "firebase-admin/auth";
 
 export async function POST(req) {
-  /**
-   * 🔐 Build-time & runtime safety guard
-   * Prevents Vercel / Next.js build from crashing
-   */
-  if (!req || !req.headers || typeof req.headers.get !== "function") {
-    return NextResponse.json(
-      { error: "Invalid request context" },
-      { status: 400 }
-    );
-  }
-
   try {
-    /* ---------------- AUTH HEADER ---------------- */
+    // 1️⃣ SAFETY: req & headers always checked
+    if (!req || !req.headers) {
+      return NextResponse.json(
+        { error: "Invalid request context" },
+        { status: 400 }
+      );
+    }
+
+    // 2️⃣ Read Authorization header safely
     const authHeader = req.headers.get("authorization");
 
-    if (!authHeader || typeof authHeader !== "string") {
+    // 3️⃣ HARD GUARD — prevents build-time crash
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { error: "Missing Authorization header" },
+        { error: "Invalid or missing Authorization header" },
         { status: 401 }
       );
     }
 
-    if (!authHeader.startsWith("Bearer ")) {
-      return NextResponse.json(
-        { error: "Invalid Authorization format" },
-        { status: 401 }
-      );
-    }
+    // 4️⃣ Safe token extraction (NO crash possible now)
+    const token = authHeader.slice(7);
 
-    const token = authHeader.replace("Bearer ", "").trim();
-
-    if (!token) {
-      return NextResponse.json(
-        { error: "Invalid token" },
-        { status: 401 }
-      );
-    }
-
-    /* ---------------- VERIFY TOKEN ---------------- */
+    // 5️⃣ Verify Firebase token
     let decodedToken;
     try {
       decodedToken = await getAuth().verifyIdToken(token);
@@ -52,17 +37,9 @@ export async function POST(req) {
       );
     }
 
-    /* ---------------- REQUEST BODY ---------------- */
-    const body = await req.json().catch(() => null);
-
-    if (!body) {
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
-
-    const { action, reportId } = body;
+    // 6️⃣ Parse body safely
+    const body = await req.json();
+    const { action, reportId } = body || {};
 
     if (!action || !reportId) {
       return NextResponse.json(
@@ -71,27 +48,26 @@ export async function POST(req) {
       );
     }
 
-    /* ---------------- FIRESTORE ---------------- */
+    // 7️⃣ Firestore reference
     const ref = adminDb.collection("reports").doc(reportId);
 
+    // 8️⃣ Perform action
     if (action === "review") {
       await ref.update({ reviewed: true });
-    } else if (action === "delete") {
-      await ref.delete();
-    } else {
-      return NextResponse.json(
-        { error: "Invalid action" },
-        { status: 400 }
-      );
     }
 
-    /* ---------------- SUCCESS ---------------- */
+    if (action === "delete") {
+      await ref.delete();
+    }
+
+    // 9️⃣ Success response
     return NextResponse.json({ success: true });
+
   } catch (err) {
     console.error("ADMIN REPORT API ERROR:", err);
 
     return NextResponse.json(
-      { error: err?.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
