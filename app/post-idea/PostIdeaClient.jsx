@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 
 export default function PostIdeaClient() {
   const { user, loading } = useAuth();
+  const isVerified = user && user.emailVerified;
   const searchParams = useSearchParams();
 
   const isEdit = searchParams.get("edit") === "true";

@@ -2,19 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import {
-  collection,
   doc,
-  getDocs,
   getDoc,
   setDoc,
   updateDoc,
-  query,
-  where,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function ChatTrigger({ ideaId, ideaOwnerId }) {
   const router = useRouter();
@@ -22,6 +19,9 @@ export default function ChatTrigger({ ideaId, ideaOwnerId }) {
   const [loading, setLoading] = useState(false);
 
   const startChat = async () => {
+    /* ===============================
+       BASIC SAFETY CHECKS
+    =============================== */
     if (!user || !user.uid) {
       toast.error("Authentication not ready. Please try again.");
       return;
@@ -42,24 +42,21 @@ export default function ChatTrigger({ ideaId, ideaOwnerId }) {
 
     try {
       /* ===============================
-         STEP 1: CHECK EXISTING REQUEST
+         DETERMINISTIC IDS
       =============================== */
-
-      const reqQuery = query(
-        collection(db, "chatRequests"),
-        where("ideaId", "==", ideaId),
-        where("fromUserId", "==", user.uid),
-        where("toUserId", "==", ideaOwnerId)
-      );
-
-      const reqSnap = await getDocs(reqQuery);
+      const requestId = `${ideaId}_${user.uid}_${ideaOwnerId}`;
 
       const participants = [user.uid, ideaOwnerId].sort();
       const chatId = `${ideaId}_${participants.join("_")}`;
 
-      if (!reqSnap.empty) {
-        const reqDoc = reqSnap.docs[0];
-        const reqData = reqDoc.data();
+      const reqRef = doc(db, "chatRequests", requestId);
+      const reqSnap = await getDoc(reqRef);
+
+      /* ===============================
+         STEP 1: EXISTING REQUEST CHECK
+      =============================== */
+      if (reqSnap.exists()) {
+        const reqData = reqSnap.data();
 
         // ✅ ACCEPTED → OPEN CHAT
         if (reqData.status === "accepted") {
@@ -69,19 +66,19 @@ export default function ChatTrigger({ ideaId, ideaOwnerId }) {
 
         // ⏳ PENDING → BLOCK DUPLICATE
         if (reqData.status === "pending") {
-          alert("Chat request already sent. Please wait for approval.");
+          toast("Chat request already sent. Please wait for approval.");
           return;
         }
 
-        // ❌ REJECTED → ALLOW RESEND
+        // ❌ REJECTED → RESEND
         if (reqData.status === "rejected") {
-          await updateDoc(doc(db, "chatRequests", reqDoc.id), {
+          await updateDoc(reqRef, {
             status: "pending",
             handledAt: null,
             updatedAt: serverTimestamp(),
           });
 
-          alert("Chat request re-sent.");
+          toast.success("Chat request re-sent.");
           return;
         }
       }
@@ -89,10 +86,11 @@ export default function ChatTrigger({ ideaId, ideaOwnerId }) {
       /* ===============================
          STEP 2: CREATE NEW REQUEST
       =============================== */
-
-      await setDoc(doc(collection(db, "chatRequests")), {
+      await setDoc(reqRef, {
         ideaId,
         fromUserId: user.uid,
+        fromUserEmail: user.email || null,
+        fromUserName: user.displayName || null,
         toUserId: ideaOwnerId,
         status: "pending",
         createdAt: serverTimestamp(),

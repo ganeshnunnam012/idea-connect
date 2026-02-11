@@ -27,6 +27,15 @@ export default function ProfileHeader({
   onReport,
   onUserUpdate, // optional
 }) {
+
+  const safeUser = {
+  uid: userData?.uid || null,
+  displayName: userData?.displayName || "User",
+  email: userData?.email || "No email",
+  photoURL: userData?.photoURL || null,
+  role: userData?.role || "user",
+};
+
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -34,31 +43,31 @@ export default function ProfileHeader({
   /* ===== Username edit ===== */
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(
-    userData?.displayName || ""
+    safeUser.displayName || ""
   );
 
   const fileInputRef = useRef(null);
-  const hasImage = Boolean(userData?.photoURL);
+  const hasImage = Boolean(safeUser.photoURL);
 
   /* =========================
      IMAGE UPLOAD
   ========================== */
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file || !userData?.uid) return;
+    if (!file || !safeUser?.uid) return;
 
     try {
       setUploading(true);
 
       const imageRef = ref(
         storage,
-        `profile-images/${userData.uid}/profile.jpg`
+        `profile-images/${safeUser.uid}/profile.jpg`
       );
 
       await uploadBytes(imageRef, file);
       const downloadURL = await getDownloadURL(imageRef);
 
-      await updateUserProfile(userData.uid, {
+      await updateUserProfile(safeUser.uid, {
         photoURL: downloadURL,
       });
 
@@ -79,14 +88,14 @@ export default function ProfileHeader({
      IMAGE DELETE (SAFE)
   ========================== */
   const handleDeleteImage = async () => {
-    if (!userData?.uid) return;
+    if (!safeUser.uid) return;
 
     try {
       setUploading(true);
 
       const imageRef = ref(
         storage,
-        `profile-images/${userData.uid}/profile.jpg`
+        `profile-images/${safeUser.uid}/profile.jpg`
       );
 
       try {
@@ -95,7 +104,7 @@ export default function ProfileHeader({
         if (err.code !== "storage/object-not-found") throw err;
       }
 
-      await updateUserProfile(userData.uid, {
+      await updateUserProfile(safeUser.uid, {
         photoURL: null,
       });
 
@@ -121,7 +130,7 @@ export default function ProfileHeader({
     }
 
     try {
-      await updateUserProfile(userData.uid, {
+      await updateUserProfile(safeUser.uid, {
         displayName: nameValue.trim(),
       });
 
@@ -152,14 +161,14 @@ export default function ProfileHeader({
         <img
           src={
             previewImage ||
-            userData?.photoURL ||
+            safeUser.photoURL ||
             "/default-avatar.png"
           }
           alt="Profile"
           className="w-24 h-24 rounded-full object-cover border cursor-pointer"
           onClick={() =>
             setPreviewImage(
-              userData?.photoURL || "/default-avatar.png"
+              safeUser.photoURL || "/default-avatar.png"
             )
           }
         />
@@ -173,13 +182,13 @@ export default function ProfileHeader({
               className="text-2xl font-bold cursor-pointer hover:underline"
               onClick={onNameClick}
             >
-              {userData?.displayName || "User"}
+              {safeUser.displayName || "User"}
             </h1>
 
             {isOwner && (
               <button
                 onClick={() => {
-                  setNameValue(userData?.displayName || "");
+                  setNameValue(safeUser.displayName || "");
                   setEditingName(true);
                 }}
                 className="p-1 rounded hover:bg-gray-200"
@@ -219,18 +228,18 @@ export default function ProfileHeader({
         )}
 
         <p className="text-gray-500 text-sm">
-          {userData?.email || "No email"}
+          {safeUser.email || "No email"}
         </p>
 
-        {userData?.bio && (
+        {safeUser.bio && (
           <p className="text-gray-400 text-sm mt-1 max-w-xl">
-            {userData.bio}
+            {safeUser.bio}
           </p>
         )}
       </div>
 
       {/* NON-OWNER MENU */}
-      {!isOwner && typeof onReport === "function" && userData?.role !== "admin" &&(
+      {!isOwner && typeof onReport === "function" && safeUser.role !== "admin" &&(
         <div className="relative">
           <button
             onClick={() => setMenuOpen((p) => !p)}

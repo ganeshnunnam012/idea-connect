@@ -1,6 +1,5 @@
 import "./globals.css";
-import { Toaster } from 'react-hot-toast';
-import Providers from "./providers";
+import Providers from "../app/providers";
 
 export default function RootLayout({ children }) {
   return (
@@ -8,7 +7,6 @@ export default function RootLayout({ children }) {
       <body>
         <Providers>
           {children}
-          <Toaster postition="top-right" />
         </Providers>
       </body>
     </html>

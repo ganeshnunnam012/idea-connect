@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import toast from "react-hot-toast";
-
 import IdeaCard from './IdeaCard';
 
 const IdeaList = ({
@@ -20,33 +18,34 @@ const IdeaList = ({
      STEP 1: FETCH IDEAS (SAFE)
   =============================== */
   useEffect(() => {
-    if (!user || user.isBanned) return; // ⛔ STOP HERE
+  // ❌ Only block banned users
+  if (user?.isBanned) return;
 
-    // If ideas are already passed (Home/Profile), use them
-    if (ideasFromParent && ideasFromParent.length > 0) {
-      setIdeas(ideasFromParent);
-      setFilteredIdeas(ideasFromParent);
-      return;
+  // ✅ Guests + users can fetch ideas
+  const fetchIdeas = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "ideas"));
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      setIdeas(data);
+      setFilteredIdeas(data);
+    } catch (err) {
+      console.error("Error fetching ideas:", err);
     }
+  };
 
-    // Otherwise fetch from Firestore
-    const fetchIdeas = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, 'ideas'));
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+  // If ideas already provided by parent, use them
+  if (ideasFromParent && ideasFromParent.length > 0) {
+    setIdeas(ideasFromParent);
+    setFilteredIdeas(ideasFromParent);
+    return;
+  }
 
-        setIdeas(data);
-        setFilteredIdeas(data);
-      } catch (err) {
-        console.error('Error fetching ideas:', err);
-      }
-    };
-
-    fetchIdeas();
-  }, [ideasFromParent]);
+  fetchIdeas();
+}, [user, ideasFromParent]);
 
   /* ===============================
      STEP 2: FILTER ONLY MY IDEAS

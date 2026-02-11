@@ -13,13 +13,13 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth";
 import toast from "react-hot-toast";
+import { useAuth } from "@/lib/auth";
+
 
 export default function AboutPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
-
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [myFeedback, setMyFeedback] = useState([]);

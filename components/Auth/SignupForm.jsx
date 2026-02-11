@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signupUser } from "@/lib/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useSnackbar } from "@/components/Snackbar";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -35,18 +36,14 @@ export default function SignupForm() {
       const userCredential = await signupUser(email, password);
       const user = userCredential.user;
 
-      // ✅ Create Firestore user document
-      await setDoc(doc(db, "users", user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.email.split("@")[0],
-        bio: "",
-        photoURL: "",
-        createdAt: new Date(),
-      });
+      // after Firestore setDoc(...)
+showSnackbar({
+  message: "Verification email sent. Please check your INBOX or SPAM folder.",
+  type: "success",
+});
 
       // ✅ Redirect after successful signup
-      router.push("/profile");
+      router.push("/home");
 
     } catch (err) {
       console.error("Signup error:", err);

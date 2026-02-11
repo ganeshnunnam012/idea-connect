@@ -1,9 +1,23 @@
 'use client';
 
 import { Phone, Mail, Link2, Globe, MapPin, User } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 
 export default function PersonalDetailsView({ userData, isOwner, onEdit }) {
+  const { user: currentUser } = useAuth();
+
   if (!userData) return null;
+
+  const isVerifiedViewer =
+  isOwner || (currentUser && currentUser.emailVerified);
+
+if (!isVerifiedViewer) {
+  return (
+    <div className="mt-6 max-w-md bg-amber-50 border border-amber-400 rounded-lg p-4 text-sm text-amber-800">
+      🔒 Verify your email to view contact details.
+    </div>
+  );
+}
 
   const {
     phone,

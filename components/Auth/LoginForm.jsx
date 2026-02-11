@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
   sendPasswordResetEmail,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { auth } from "@/lib/firebase";
 import { signupUser, loginUser } from "@/lib/auth";
 import { resendVerificationEmail } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
+import { loginWithGoogle } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const styles = {
   card: {
@@ -76,7 +79,6 @@ const styles = {
     cursor: "pointer",
   },
 };
-
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -86,10 +88,19 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   // ✅ NEW: warning state (focus-based)
   const [showLoginTip, setShowLoginTip] = useState(false);
-
-  const provider = new GoogleAuthProvider();
   const [resendLoading, setResendLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const router = useRouter();
+  const { loading: authLoading } = useAuth();
+  const provider = new GoogleAuthProvider();
+
+if (authLoading) {
+  return (
+    <div style={{ textAlign: "center", padding: "20px" }}>
+      Checking authentication...
+    </div>
+  );
+}
 
   const handleEmailAuth = async () => {
   setError("");
@@ -127,18 +138,21 @@ export default function LoginForm() {
     setLoading(false);
   }
 };
+const handleGoogleLogin = async () => {
+  setLoading(true);
+  try {
+    await signInWithPopup(auth, provider);
 
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, provider);
-    } catch {
-      setError("Google login failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // ✅ EXPLICIT NAVIGATION (THIS IS THE FIX)
+    router.replace("/home");
 
+  } catch (error) {
+  console.error("Google login error:", error);
+  setError(error.code || "Google login failed.");
+}finally {
+    setLoading(false);
+  }
+};
   const handleResendVerification = async () => {
   try {
     setResendLoading(true);
@@ -178,7 +192,6 @@ export default function LoginForm() {
       setError("Unable to send reset email. Try again later.");
     }
   };
-
   return (
     <div style={styles.card}>
       <h2 style={styles.title}>{isSignup ? "Create Account" : "Login"}</h2>

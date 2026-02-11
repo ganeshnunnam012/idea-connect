@@ -34,6 +34,16 @@ export default function IdeaForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!user) {
+  toast.error("Please login to continue");
+  return;
+}
+
+if (!user.emailVerified) {
+  toast.error("Please verify your email to post ideas");
+  return;
+}
+
     if (!title || !description) {
       toast.error("Please fill all required fields");
       return;
@@ -158,18 +168,29 @@ export default function IdeaForm({
 
           {/* Submit */}
           <button
-            type="submit"
-            disabled={loading}
-            className={`mt-4 inline-flex items-center justify-center
-              rounded-md px-6 py-2.5 font-medium text-white transition-all
-              ${
-                loading
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-          >
-            {loading ? "Saving..." : isEdit ? "Update Idea" : "Post Idea"}
-          </button>
+  type="submit"
+  disabled={loading || !user?.emailVerified}
+  className={`mt-4 inline-flex items-center justify-center
+    rounded-md px-6 py-2.5 font-medium text-white transition-all
+    ${
+      loading || !user?.emailVerified
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-blue-600 hover:bg-blue-700"
+    }`}
+>
+  {loading
+    ? "Saving..."
+    : !user?.emailVerified
+    ? "Verify Email to Post"
+    : isEdit
+    ? "Update Idea"
+    : "Post Idea"}
+</button>
+{!user?.emailVerified && (
+  <p className="mt-2 text-sm text-amber-600 text-center">
+    Please verify your email to post or update ideas.
+  </p>
+)}
         </form>
       </div>
     </div>

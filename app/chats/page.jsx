@@ -95,6 +95,10 @@ if (user?.isBanned) {
     );
   }
 
+if (!user) {
+  return null;
+}
+
   if (chats.length === 0) {
     return (
       <div className="max-w-4xl mx-auto mt-16 text-center">

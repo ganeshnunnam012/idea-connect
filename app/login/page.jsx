@@ -10,28 +10,25 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if(!loading && user) {
-      router.replace("/home");
-    }
-  }, [user, loading]);
+    if (loading) return;
+    if (user) router.replace("/home");
+  }, [loading, user]);
 
-  if (loading) {
-    return  (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Checking authentication...</p>
-      </div>
-    );
-  } // or loader
-
+  // 🔒 HARD GUARD — stops flicker completely
+  if (loading || user) {
+    return null;
+  }
+  // ✅ Only unauthenticated users reach here
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 px-4">
-        <h1 className="text-4xl font-bold mb-2 text-gray-800">
-            Idea Connect 💡
-        </h1>
-        <p className="text-gray-600 text-center mb-8 max-w-md">
-            A platform to share ideas, discover gaps, and connect with people
-        </p>
-        <LoginForm />
+      <h1 className="text-4xl font-bold mb-2 text-gray-800">
+        Idea Connect💡
+      </h1>
+      <p className="text-gray-600 text-center mb-8 max-w-md">
+        A platform to share ideas, discover gaps, and connect with people
+      </p>
+
+      <LoginForm />
     </div>
   );
 }

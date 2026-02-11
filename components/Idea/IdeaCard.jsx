@@ -39,6 +39,7 @@ const formatDate = (date) => {
 const IdeaCard = ({ idea, showActions = false }) => {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const isVerifiedUser = user && user.emailVerified;
   const [saved, setSaved] = useState(false);
   const canUseFirestore = !loading && user && !user.isBanned;
   const isOwner = user && idea.userId === user.uid;
@@ -72,6 +73,11 @@ const IdeaCard = ({ idea, showActions = false }) => {
   ------------------------------------ */
   const toggleSave = async (e) => {
     e.stopPropagation();
+
+    if (!user.emailVerified) {
+  toast.error("Verify your email to save ideas");
+  return;
+}
 
     if (!canUseFirestore) {
     toast.error("Your account is banned");
@@ -113,7 +119,20 @@ const IdeaCard = ({ idea, showActions = false }) => {
   ------------------------------------ */
   return (
     <article
-      onClick={() => router.push(`/ideas/${idea.id}`)}
+      onClick={() => {
+  if (!user) {
+    toast.error("Please login to continue");
+    router.push("/login");
+    return;
+  }
+
+  if (!user.emailVerified) {
+    toast.error("Verify your email to access idea details");
+    return;
+  }
+
+  router.push(`/ideas/${idea.id}`);
+}}
       className="relative border rounded-xl bg-white p-5 cursor-pointer hover:shadow-md transition"
     >
       {/* Bookmark */}
@@ -162,9 +181,21 @@ const IdeaCard = ({ idea, showActions = false }) => {
         {/* Author */}
         <p
           onClick={(e) => {
-            e.stopPropagation();
-            router.push(`/user/${idea.userId}`);
-          }}
+  e.stopPropagation();
+
+  if (!user) {
+    toast.error("Please login to view profiles");
+    router.push("/login");
+    return;
+  }
+
+  if (!user.emailVerified) {
+    toast.error("Verify your email to view user profiles");
+    return;
+  }
+
+  router.push(`/user/${idea.userId}`);
+}}
           className="text-sm text-gray-600 cursor-pointer"
         >
           Posted by{" "}

@@ -8,6 +8,10 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { rtdb } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { ref, onValue } from "firebase/database";
+import { ArrowLeft } from "lucide-react";
 
 /* ================================
    AVATAR COLOR UTILS
@@ -39,6 +43,7 @@ function formatLastSeen(timestamp) {
 
   const last = timestamp.toDate();
   const now = new Date();
+
   const diffMs = now - last;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
@@ -48,19 +53,36 @@ function formatLastSeen(timestamp) {
     hour12: true,
   });
 
-  if (diffDays === 0) return `Last seen at ${time}`;
-  if (diffDays === 1) return `Last seen yesterday at ${time}`;
+  if (diffDays === 0) {
+    return `Last seen today at ${time}`;
+  }
+
+  if (diffDays === 1) {
+    return `Last seen yesterday at ${time}`;
+  }
 
   return `Last seen on ${last.toLocaleDateString()} at ${time}`;
+}
+
+function TypingIndicator() {
+  return (
+    <span className="flex items-center gap-1">
+      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:0ms]" />
+      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:150ms]" />
+      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:300ms]" />
+    </span>
+  );
 }
 
 /* ================================
    CHAT HEADER
 ================================ */
 export default function ChatHeader({ chatId, otherUserId }) {
+  const router = useRouter();
   const [userData, setUserData] = useState(null);
   const [typing, setTyping] = useState(false);
   const [online, setOnline] = useState(false);
+  const [status, setStatus] = useState(null);
 
   /* -------------------------------
      LISTEN TO USER STATUS
@@ -76,7 +98,6 @@ export default function ChatHeader({ chatId, otherUserId }) {
 
       // SAFE FIELD ACCESS (important)
       setTyping(data?.typingInChat === chatId);
-      setOnline(Boolean(data?.isOnline));
     });
 
     return () => unsub();
@@ -87,12 +108,23 @@ export default function ChatHeader({ chatId, otherUserId }) {
      (does NOT spam Firestore)
   -------------------------------- */
   useEffect(() => {
-    if (!otherUserId) return;
+  if (!otherUserId) return;
 
-    updateDoc(doc(db, "users", otherUserId), {
-      lastActivityAt: serverTimestamp(),
-    }).catch(() => {});
-  }, [otherUserId]);
+  const statusRef = ref(rtdb, `/status/${otherUserId}`);
+
+  const unsubscribe = onValue(statusRef, (snapshot) => {
+    setStatus(snapshot.val());
+  });
+
+  return () => unsubscribe();
+}, [otherUserId]);
+
+useEffect(() => {
+  if (!status) return;
+
+  // ✅ Realtime DB is the ONLY source for online/offline
+  setOnline(status?.state === "online");
+}, [status]);
 
   if (!userData) return null;
 
@@ -114,21 +146,34 @@ export default function ChatHeader({ chatId, otherUserId }) {
   let statusColor = "text-gray-400";
 
   if (typing) {
-    statusText = "Typing...";
-    statusColor = "text-green-500";
-  } else if (online) {
+  statusText = <TypingIndicator />;
+  statusColor = "text-green-500";
+} else if (online) {
     statusText = "Online";
     statusColor = "text-green-500";
   } else {
-    statusText = formatLastSeen(userData.lastActivityAt);
-    statusColor = "text-gray-400";
-  }
+  statusText = formatLastSeen(userData?.lastSeen);
+  statusColor = "text-gray-400";
+}
 
   /* ================================
      UI
   ================================= */
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b bg-slate-800 text-white">
+    <div
+  className="
+    flex items-center gap-3 px-4 py-3 border-b bg-slate-800 text-white
+    transition-all duration-300 ease-out
+    animate-header-in
+  "
+>
+      <button
+  onClick={() => router.push("/chats")}
+  className="p-1 hover:bg-slate-700 rounded-full transition"
+  aria-label="Back to chats"
+>
+  <ArrowLeft size={18} />
+</button>
       {/* Avatar */}
       <div
         className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white"
@@ -140,7 +185,16 @@ export default function ChatHeader({ chatId, otherUserId }) {
       {/* Name & Status */}
       <div className="flex flex-col leading-tight">
         <span className="font-medium text-white">{name}</span>
-        <span className={`text-sm ${statusColor}`}>{statusText}</span>
+        <div className="h-5 overflow-hidden flex items-center">
+  <span
+    className={`
+      text-sm ${statusColor}
+      transition-opacity duration-200 ease-in-out
+    `}
+  >
+    {statusText}
+  </span>
+</div>
       </div>
     </div>
   );
