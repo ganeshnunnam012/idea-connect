@@ -17,6 +17,7 @@ export default function IdeaForm({
   const [category, setCategory] = useState("");
   const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(false);
+  const [visibility, setVisibility] = useState("protected");
 
   // Tip visibility
   const [showDescriptionTip, setShowDescriptionTip] = useState(false);
@@ -28,6 +29,7 @@ export default function IdeaForm({
       setDescription(initialData.description || "");
       setCategory(initialData.category || "");
       setTags(initialData.tags?.join(", ") || "");
+      setVisibility(initialData.visibility || "protected");
     }
   }, [isEdit, initialData]);
 
@@ -59,6 +61,7 @@ if (!user.emailVerified) {
         tags: tags.split(",").map((t) => t.trim().toLowerCase()),
         userId: user.uid,
         userEmail: user.email,
+        visibility,
         createdAt:
           isEdit && initialData?.createdAt
             ? initialData.createdAt
@@ -165,6 +168,43 @@ if (!user.emailVerified) {
               focus:border-blue-500
               focus:ring-2 focus:ring-blue-500/40"
           />
+
+          {/* Visibility Selection */}
+<div className="space-y-2">
+  <label className="text-sm font-medium text-gray-700">
+    Idea Visibility
+  </label>
+
+  <div className="flex items-center gap-6">
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        value="protected"
+        checked={visibility === "protected"}
+        onChange={(e) => setVisibility(e.target.value)}
+      />
+      <span className="text-sm text-gray-800">
+        Protected (Only preview visible)
+      </span>
+    </label>
+
+    <label className="flex items-center gap-2 cursor-pointer">
+      <input
+        type="radio"
+        value="public"
+        checked={visibility === "public"}
+        onChange={(e) => setVisibility(e.target.value)}
+      />
+      <span className="text-sm text-gray-800">
+        Public (Full idea visible)
+      </span>
+    </label>
+  </div>
+
+  <p className="text-xs text-gray-500">
+    Protected ideas require approval before others can view the full description.
+  </p>
+</div>
 
           {/* Submit */}
           <button

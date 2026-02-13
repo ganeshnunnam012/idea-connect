@@ -18,6 +18,7 @@ import IdeaCard from "@/components/Idea/IdeaCard";
 import { hasPersonalDetails } from "@/lib/profileChecks";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import IncomingChatRequests from "@/components/chat/IncomingChatRequests";
+import IncomingAccessRequests from "@/components/Idea/IncomingAccessRequests";
 import toast from "react-hot-toast";
 
 export default function ProfilePage() {
@@ -107,6 +108,7 @@ export default function ProfilePage() {
         )}
 
         <IncomingChatRequests />
+        <IncomingAccessRequests />
 
         {/* INCOMPLETE PROFILE WARNING */}
         {userData &&

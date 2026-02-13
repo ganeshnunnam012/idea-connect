@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  doc,
-  getDoc,
-  setDoc,
+import { 
+  doc, 
+  getDoc, 
+  setDoc, 
   deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +21,9 @@ import {
 import {
   BookmarkIcon as BookmarkSolid,
 } from "@heroicons/react/24/solid";
+import { LockClosedIcon } from "@heroicons/react/24/solid";
+import { ShieldCheckIcon } from "@heroicons/react/24/solid";
+import { requestIdeaAccess } from "@/lib/db";
 
 /* ------------------------------------
    Helper: Date formatter
@@ -43,6 +50,12 @@ const IdeaCard = ({ idea, showActions = false }) => {
   const [saved, setSaved] = useState(false);
   const canUseFirestore = !loading && user && !user.isBanned;
   const isOwner = user && idea.userId === user.uid;
+  const isProtected = idea.visibility === "protected";
+  const [hasAccess, setHasAccess] = useState(false);
+const previewText =
+  idea.description?.length > 120
+    ? idea.description.slice(0, 120) + "..."
+    : idea.description;
 
   /* ------------------------------------
      Check if idea is saved
@@ -67,6 +80,36 @@ const IdeaCard = ({ idea, showActions = false }) => {
 };
     checkSaved();
   }, [user, idea.id]);
+
+  // 🔐 Check if user has approved access
+useEffect(() => {
+  if (!user || !isProtected || isOwner) return;
+
+  const checkAccess = async () => {
+    try {
+      const q = query(
+        collection(db, "accessRequests"),
+        where("ideaId", "==", idea.id),
+        where("requesterId", "==", user.uid),
+        where("status", "==", "approved")
+      );
+
+      const snap = await getDocs(q);
+
+      if (!snap.empty) {
+        setHasAccess(true);
+      } else {
+        setHasAccess(false);
+      }
+
+    } catch (err) {
+      console.error("Access check failed:", err);
+    }
+  };
+
+  checkAccess();
+
+}, [user, idea.id, isProtected, isOwner]);
 
   /* ------------------------------------
      Toggle Save / Unsave
@@ -130,34 +173,48 @@ const IdeaCard = ({ idea, showActions = false }) => {
     toast.error("Verify your email to access idea details");
     return;
   }
+  if (isProtected && !isOwner && !hasAccess) {
+  toast.error("You don't have access to this idea");
+  return;
+}
 
-  router.push(`/ideas/${idea.id}`);
+router.push(`/ideas/${idea.id}`);
 }}
       className="relative border rounded-xl bg-white p-5 cursor-pointer hover:shadow-md transition"
     >
-      {/* Bookmark */}
-      <button
-        onClick={toggleSave}
-        className="absolute top-4 right-4"
-        title={saved ? "Unsave" : "Save"}
-      >
-        {saved ? (
-          <BookmarkSolid className="w-6 h-6 text-sky-500" />
-        ) : (
-          <BookmarkOutline className="w-6 h-6 text-sky-400 hover:text-sky-500" />
-        )}
-      </button>
+      {/* Bookmark (Only for verified non-owners) */}
+{user && user.emailVerified && !isOwner && (
+  <button
+    onClick={toggleSave}
+    className="absolute top-4 right-4"
+    title={saved ? "Unsave" : "Save"}
+  >
+    {saved ? (
+      <BookmarkSolid className="w-6 h-6 text-sky-500" />
+    ) : (
+      <BookmarkOutline className="w-6 h-6 text-sky-400 hover:text-sky-500" />
+    )}
+  </button>
+)}
 
       {/* Title */}
       <h3 className="text-xl font-semibold text-gray-900 mb-2 leading-snug">
         {idea.title}
       </h3>
+      {isProtected && !isOwner && !hasAccess && (
+  <div className="flex justify-center mt-2">
+    <span className="px-3 py-1 text-xs rounded-full bg-amber-100 text-amber-700 font-semibold tracking-wide">
+      🔒 Protected Idea
+    </span>
+  </div>
+)}
 
       {/* Description (PASSAGE STYLE) */}
       <p className="text-gray-700 mb-4 leading-relaxed text-justify w-full">
-        {idea.description}
-      </p>
-
+  {isProtected && !isOwner && !hasAccess
+    ? previewText + " ..."
+    : idea.description}
+</p>
       {/* Category & Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         {idea.category && (
@@ -236,6 +293,55 @@ const IdeaCard = ({ idea, showActions = false }) => {
             </button>
           </div>
         )}
+        {isProtected && !isOwner &&  !hasAccess && (
+  <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end">
+    <button
+      onClick={async (e) => {
+  e.stopPropagation();
+
+  // 1️⃣ Not logged in
+  if (!user) {
+    toast.error("Please login to request access");
+    return;
+  }
+
+  // 2️⃣ Email not verified
+  if (!user.emailVerified) {
+    toast.error("Please verify your email before requesting access");
+    return;
+  }
+
+  try {
+    await requestIdeaAccess(idea, user);
+    toast.success("Access request sent successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error(
+      err.message === "Request already sent"
+        ? "You already requested access"
+        : "Failed to send request"
+    );
+  }
+}}
+      className="
+  px-4 py-1.5
+  text-sm font-medium
+  rounded-md
+  bg-gradient-to-r from-blue-600 to-indigo-600
+  text-white
+  hover:from-blue-700 hover:to-indigo-700
+  active:scale-95
+  transition-all duration-200
+  shadow-md hover:shadow-lg
+"
+    >
+    <span className="flex items-center gap-2">
+  <ShieldCheckIcon className="w-4 h-4" />
+  Request Access
+</span>
+    </button>
+  </div>
+)}
       </div>
     </article>
   );
