@@ -8,6 +8,8 @@ import { Suspense } from "react";
 import toast from "react-hot-toast";
 import { resendVerificationEmail } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Sidebar from "@/components/Layout/Sidebar";
+import { useSidebar } from "@/components/Layout/SidebarContext";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -15,6 +17,8 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [resendDisabled, setResendDisabled] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState("GENERAL");
+  const { isSidebarOpen, closeSidebar } = useSidebar();
 
   const handleResendVerification = async () => {
   if (resendDisabled) {
@@ -81,8 +85,37 @@ if (loading) {
 
 
   return (
-    <ProtectedRoute>
-    <main>
+  <ProtectedRoute>
+    <div className="flex w-full h-screen overflow-hidden relative">
+      {/* Mobile Sidebar */}
+{isSidebarOpen && (
+  <div className="fixed inset-0 z-40 md:hidden">
+    
+    {/* Overlay */}
+    <div
+      className="absolute inset-0 bg-black/40"
+      onClick={closeSidebar}
+    />
+
+    {/* Drawer */}
+    <aside className="absolute left-0 top-0 w-64 h-full bg-white dark:bg-black p-4 overflow-y-auto shadow-lg md:hidden">
+  <Sidebar
+  selectedCategory={selectedCategory}
+  setSelectedCategory={setSelectedCategory}
+/>
+</aside>
+  </div>
+)}
+      {/* Sidebar - Desktop Only */}
+      <div className="hidden md:block">
+  <Sidebar
+    selectedCategory={selectedCategory}
+    setSelectedCategory={setSelectedCategory}
+  />
+</div>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
       {user && !user.emailVerified && (
   <div
     style={{
@@ -129,7 +162,20 @@ if (loading) {
 </button>
   </div>
 )}
-      <div style={{ padding: "40px", textAlign: "center" }}>
+
+<>
+
+  <div
+  className="flex-1 overflow-y-auto"
+  style={{
+  paddingTop: window.innerWidth <= 768 ? "20px" : "40px",
+  paddingLeft: window.innerWidth <= 768 ? "20px" : "40px",
+  paddingRight: window.innerWidth <= 768 ? "20px" : "40px",
+  paddingBottom: "100px"
+}}
+>
+
+      <div className="px-4 md:px-10 pt-6 text-center shrink-0">
         {/* Welcome / Info message */}
         {user ? (
   <p>
@@ -138,11 +184,9 @@ if (loading) {
 ) : (
   <p>Browse ideas freely. Login to post or interact.</p>
 )}
-
         {/* IDEAS SECTION */}
         <section className="ideas" style={{ marginTop: "30px" }}>
-          <Suspense fallback={null}>
-            {/* Search Bar */}
+          {/* Search Bar */}
             <input
               type="text"
               placeholder="Search ideas by title, category, or tags..."
@@ -156,11 +200,12 @@ if (loading) {
                 border: "1px solid #ccc",
               }}
             />
-
+          <Suspense fallback={null}>
             {/* Idea List (Firestore-driven) */}
             <IdeaList searchQuery={searchQuery}
             user={user}
-            allowEdit={false} 
+            allowEdit={false}
+            selectedCategory={selectedCategory}
             />
           </Suspense>
         </section>
@@ -184,7 +229,10 @@ if (loading) {
           </div>
         )}
       </div>
+      </div>
+</>
     </main>
+    </div>
     </ProtectedRoute>
   );
 }

@@ -148,6 +148,7 @@ useEffect(() => {
           title: idea.title,
           createdAt: new Date(),
         });
+
         setSaved(true);
         toast.success("Saved to bookmarks");
       }

@@ -18,6 +18,31 @@ export default function IdeaForm({
   const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(false);
   const [visibility, setVisibility] = useState("protected");
+  // ✅ CENTRAL CATEGORY LIST (Must match Sidebar & IdeaList)
+const CATEGORY_OPTIONS = [
+  "GENERAL",
+  "STARTUPS",
+  "MEDICAL",
+  "MOVIES",
+  "INDUSTRIAL",
+  "BUSINESS",
+  "IT",
+  "NEW TECHNOLOGIES",
+  "ENVIRONMENT",
+  "EDUCATION",
+  "SOCIETAL",
+  "POLITICAL",
+  "AUTOMOBILES",
+  "ELECTRICAL",
+  "ELECTRONICS",
+  "AI",
+  "SPORTS",
+  "TRANSPORT",
+  "AGRICULTURE",
+  "FINANCE",
+  "SPACE",
+  "OTHERS"
+];
 
   // Tip visibility
   const [showDescriptionTip, setShowDescriptionTip] = useState(false);
@@ -27,8 +52,10 @@ export default function IdeaForm({
     if (isEdit && initialData) {
       setTitle(initialData.title || "");
       setDescription(initialData.description || "");
-      setCategory(initialData.category || "");
-      setTags(initialData.tags?.join(", ") || "");
+     setCategory(initialData.category?.toUpperCase() || "");
+      setTags(Array.isArray(initialData.tags)
+  ? initialData.tags.join(", ")
+  : "");
       setVisibility(initialData.visibility || "protected");
     }
   }, [isEdit, initialData]);
@@ -46,27 +73,62 @@ if (!user.emailVerified) {
   return;
 }
 
-    if (!title || !description) {
-      toast.error("Please fill all required fields");
-      return;
-    }
+    if (!title || !description || !category) {
+  toast.error("Please fill all required fields including category");
+  return;
+}
 
     try {
       setLoading(true);
 
-      const payload = {
-        title,
-        description,
-        category: category.toLowerCase(),
-        tags: tags.split(",").map((t) => t.trim().toLowerCase()),
-        userId: user.uid,
-        userEmail: user.email,
-        visibility,
-        createdAt:
-          isEdit && initialData?.createdAt
-            ? initialData.createdAt
-            : new Date(),
-      };
+      // 🔥 Build Search Index
+const normalizedCategory = category.toUpperCase();
+const tagArray = tags
+  .split(",")
+  .map((t) => t.trim().toLowerCase())
+  .filter(Boolean);
+
+const cleanText = (text = "") =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "") // remove punctuation
+    .split(" ")
+    .filter(Boolean);
+
+const textTokens = [
+  ...cleanText(title),
+  ...cleanText(description),
+  normalizedCategory,
+  ...tagArray,
+];
+
+// remove duplicates
+const searchIndex = [...new Set(textTokens)].slice(0, 30);
+
+const searchableText = `
+${title} ${description} ${normalizedCategory} ${tagArray.join(" ")}
+`.toLowerCase();
+
+const payload = {
+  title,
+  description,
+  category: normalizedCategory,
+  tags: tagArray,
+  searchIndex, // ✅ NEW FIELD
+  userId: user.uid,
+  userEmail: user.email,
+  visibility,
+  allowedUsers: visibility === "protected" ? [user.uid] : [],
+  createdAt: isEdit && initialData?.createdAt
+    ? initialData.createdAt
+    : new Date(),
+    searchableText,
+    // 🟢 Ranking Fields (NEW)
+  engagementScore: 0,
+  qualityScore: 50, // default neutral score
+  rankingScore: 100, // initial score
+  lastEngagementAt: serverTimestamp(),
+};
 
       if (isEdit && initialData?.id) {
         await updateIdea(initialData.id, payload);
@@ -137,21 +199,32 @@ if (!user.emailVerified) {
             </div>
           )}
 
-          {/* Category */}
-          <input
-            type="text"
-            placeholder="Category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-md
-              border border-gray-300
-              bg-white
-              text-gray-900
-              placeholder-gray-400
-              focus:outline-none
-              focus:border-blue-500
-              focus:ring-2 focus:ring-blue-500/40"
-          />
+          {/* Category Selection */}
+<div className="space-y-1">
+  <label className="text-sm font-medium text-gray-700">
+    Category *
+  </label>
+
+  <select
+    value={category}
+    onChange={(e) => setCategory(e.target.value)}
+    className="w-full px-4 py-2.5 rounded-md
+               border border-gray-300
+               bg-white text-gray-900
+               focus:outline-none
+               focus:border-blue-500
+               focus:ring-2 focus:ring-blue-500/40"
+    required
+  >
+    <option value="">Select a category</option>
+
+    {CATEGORY_OPTIONS.map((cat) => (
+      <option key={cat} value={cat}>
+        {cat}
+      </option>
+    ))}
+  </select>
+</div>
 
           {/* Applications */}
           <input

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import toast from "react-hot-toast";
 
 export default function ReportsStats() {
   const [stats, setStats] = useState({

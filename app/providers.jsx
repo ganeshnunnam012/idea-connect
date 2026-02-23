@@ -1,7 +1,9 @@
 "use client";
 
 import { AuthProvider, useAuth } from "@/lib/auth";
+import MobileBottomNav from "@/components/Layout/MobileBottomNav";
 import NavbarWrapper from "@/components/NavbarWrapper";
+import { SidebarProvider } from "@/components/Layout/SidebarContext";
 import BootSplashRemover from "@/components/BootSplashRemover";
 import { Toaster } from "react-hot-toast";
 
@@ -9,12 +11,12 @@ function AuthGate({ children }) {
   const { loading } = useAuth();
 
   if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center text-gray-400">
-      Authenticating…
-    </div>
-  );
-}
+    return (
+      <div className="min-h-screen flex items-center justify-center text-gray-400">
+        Authenticating...
+      </div>
+    );
+  }
 
   return children;
 }
@@ -22,21 +24,24 @@ function AuthGate({ children }) {
 export default function Providers({ children }) {
   return (
     <AuthProvider>
-      <BootSplashRemover />
+      <SidebarProvider>   {/* ✅ NOW IT WRAPS EVERYTHING */}
 
-      {/* ✅ TOAST CONTAINER (GLOBAL & ALWAYS MOUNTED) */}
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-        }}
-      />
-      <AuthGate>
-        <>
-          <NavbarWrapper />
+        <BootSplashRemover />
+
+        <Toaster
+          position="top-center"
+          toastOptions={{ duration: 3000 }}
+        />
+
+        <NavbarWrapper />
+
+        <AuthGate>
           {children}
-        </>
-      </AuthGate>
+        </AuthGate>
+
+        <MobileBottomNav />
+
+      </SidebarProvider>
     </AuthProvider>
   );
 }

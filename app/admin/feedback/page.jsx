@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import toast from "react-hot-toast";
 import { useAuth } from "@/lib/auth";
 
 export default function AdminFeedbackPage() {

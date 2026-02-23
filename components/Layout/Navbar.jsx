@@ -4,17 +4,16 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
+import { useSidebar } from "@/components/Layout/SidebarContext";
 
 export default function Navbar() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   const [isMobile, setIsMobile] = useState(false);
+  const { toggleSidebar } = useSidebar();
 
 useEffect(() => {
   const checkScreen = () => {
@@ -57,20 +56,21 @@ useEffect(() => {
   }}
   className="navbar-animate"
 >
-      <h2 style={styles.logo} onClick={() => router.push("/")}>
-        Idea Connect
-      </h2>
+      <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+  {isMobile && (
+    <button
+      onClick={toggleSidebar}
+      style={styles.hamburger}
+      aria-label="Toggle menu"
+    >
+      ☰
+    </button>
+  )}
 
-      {/* Mobile Hamburger */}
-{isMobile && (
-  <button
-    onClick={() => setIsMobileMenuOpen(prev => !prev)}
-    style={styles.hamburger}
-    aria-label="Toggle menu"
-  >
-    ☰
-  </button>
-)}
+  <h2 style={styles.logo} onClick={() => router.push("/")}>
+    Idea Connect
+  </h2>
+</div>
 
       <div style={{ 
   ...styles.links, 
@@ -129,42 +129,6 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
-{isMobile && isMobileMenuOpen && (
-  <div style={styles.mobileMenu}>
-    <button onClick={() => { router.push("/home"); setIsMobileMenuOpen(false); }}>
-      Home
-    </button>
-
-    {user && (
-      <button onClick={() => { router.push("/post-idea"); setIsMobileMenuOpen(false); }}>
-        Post Idea
-      </button>
-    )}
-
-    {user ? (
-      <>
-        <button onClick={() => { router.push("/profile"); setIsMobileMenuOpen(false); }}>
-          Profile
-        </button>
-        <button onClick={() => { router.push("/chats"); setIsMobileMenuOpen(false); }}>
-          Chats
-        </button>
-        <button onClick={handleLogout}>
-          Logout
-        </button>
-      </>
-    ) : (
-      <button onClick={() => { router.push("/login"); setIsMobileMenuOpen(false); }}>
-        Login
-      </button>
-    )}
-
-    <button onClick={() => { router.push("/about"); setIsMobileMenuOpen(false); }}>
-      About
-    </button>
-  </div>
-)}
     </nav>
   );
 }
@@ -199,17 +163,6 @@ navScrolled: {
     gap: "28px",
   },
   activeButton: {
-  background: "rgba(159,231,235,0.08)",
-  border: "none",
-  borderBottom: "2px solid #2563eb",
-  color: "#2563eb",
-  fontWeight: "600",
-  fontSize: "14px",
-  cursor: "pointer",
-  padding: "6px 10px",
-  transition: "all 0.25s ease",
-},
-  activeButton: {
     background: "transparent",
     borderBottom: "2px solid #2563eb",
     color: "#2563eb",
@@ -225,19 +178,5 @@ navScrolled: {
   color: "#ffffff",
   cursor: "pointer",
   display: "flex",
-},
-
-mobileMenu: {
-  position: "absolute",
-  top: "100%",
-  right: "16px",
-  background: "rgba(17,24,39,0.98)",
-  backdropFilter: "blur(8px)",
-  borderRadius: "12px",
-  padding: "12px",
-  display: "flex",
-  flexDirection: "column",
-  gap: "10px",
-  zIndex: 100,
 },
 };

@@ -1,12 +1,12 @@
 import "./globals.css";
-import Providers from "../app/providers";
+import Providers from "./providers";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
         <Providers>
-          {children}
+            {children}
         </Providers>
       </body>
     </html>

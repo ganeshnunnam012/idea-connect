@@ -3,38 +3,23 @@
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import Navbar from "@/components/Layout/Navbar";
-import { useEffect, useState } from "react";
 
 export default function NavbarWrapper() {
   const pathname = usePathname();
-  const { user, guestMode, loading } = useAuth();
-  const [show, setShow] = useState(false);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-  if (!loading) {
-    setShow(true);
-  }
-}, [loading]);
+  // Pages where navbar should NOT appear
+  const hideNavbarRoutes = ["/", "/login", "/signup"];
 
-  if(loading) return null;
-  
-  // ❌ No Navbar on login page
-  if (pathname === "/login") return null;
+  // If loading auth → don't render anything
+  if (loading) return null;
 
-  // ❌ No Navbar if not logged in & not guest
-  if (!user && !guestMode) return null;
+  // If route is landing/login/signup → hide
+  if (hideNavbarRoutes.includes(pathname)) return null;
 
-  if (pathname == "/") return null;
+  // If user not logged in → hide
+  if (!user) return null;
 
-  return (
-  <div
-    style={{
-      opacity: show ? 1 : 0,
-      transform: show ? "translateY(0)" : "translateY(-6px)",
-      transition: "opacity 0.25s ease, transform 0.25s ease",
-    }}
-  >
-    <Navbar />
-  </div>
-);
+  // Otherwise show navbar
+  return <Navbar />;
 }

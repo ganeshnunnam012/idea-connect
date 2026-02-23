@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 
 import ChatBox from "@/components/chat/ChatBox";
 import ChatTrigger from "@/components/chat/ChatTrigger";
+import toast from "react-hot-toast";
 
 const IdeaDetailsPage = () => {
   const { id } = useParams();
