@@ -133,7 +133,7 @@ if (!user) {
           return (
             <div
               key={chat.id}
-              className="bg-white border rounded-lg px-5 py-4 flex justify-between items-center shadow-sm"
+              className="bg-white border rounded-lg px-5 py-4 shadow-sm flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
             >
               {/* LEFT SIDE */}
               <div className="space-y-1">
@@ -166,7 +166,16 @@ if (!user) {
                     e.stopPropagation();
                     router.push(`/chats/${chat.id}`);
                   }}
-                  className="bg-blue-600 text-white text-sm px-4 py-1.5 rounded hover:bg-blue-700 transition"
+                  className="
+bg-blue-600 text-white
+text-sm sm:text-sm
+px-4 py-2
+w-full sm:w-auto
+rounded-lg
+hover:bg-blue-700
+transition
+whitespace-nowrap
+"
                 >
                   Continue Chat
                 </button>
