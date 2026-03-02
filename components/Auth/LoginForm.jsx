@@ -17,8 +17,8 @@ import { useRouter } from "next/navigation";
 const styles = {
   card: {
   width: "100%",
-  maxWidth: "460px",
-  padding: "36px 40px",
+  maxWidth: "480px",
+  padding: "48px 50px",
   borderRadius: "16px",
   backgroundColor: "#ffffff",
   boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
@@ -44,25 +44,39 @@ const styles = {
     marginBottom: "10px",
   },
   primaryButton: {
-    width: "100%",
-    padding: "10px",
-    marginTop: "8px",
-    borderRadius: "6px",
-    border: "none",
-    backgroundColor: "#1032caff",
-    color: "#fff",
-    cursor: "pointer",
-  },
+  width: "100%",
+  padding: "12px",
+  marginTop: "8px",
+  borderRadius: "10px",
+  border: "none",
+  backgroundColor: "#2563eb",
+  color: "#ffffff",
+  fontSize: "15px",
+  fontWeight: "500",
+  cursor: "pointer",
+  transition: "all 0.2s ease"
+},
   googleButton: {
-    width: "100%",
-    padding: "10px",
-    marginTop: "8px",
-    borderRadius: "6px",
-    border: "none",
-    backgroundColor: "#4285F4",
-    color: "#fff",
-    cursor: "pointer",
-  },
+  width: "100%",
+  padding: "12px",
+  borderRadius: "10px",
+  border: "1px solid #dadce0",
+  backgroundColor: "#ffffff",
+  color: "#3c4043",
+  fontSize: "15px",
+  fontWeight: "500",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  cursor: "pointer",
+  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+  transition: "all 0.2s ease"
+},
+googleIcon: {
+  width: "18px",
+  height: "18px"
+},
   divider: {
     textAlign: "center",
     margin: "12px 0",
@@ -300,12 +314,18 @@ const handleGoogleLogin = async () => {
       <div style={styles.divider}>OR</div>
 
       <button
-        onClick={handleGoogleLogin}
-        disabled={loading}
-        style={styles.googleButton}
-      >
-        Login with Google
-      </button>
+  type="button"
+  onClick={handleGoogleLogin}
+  disabled={loading}
+  style={styles.googleButton}
+>
+  <img
+    src="https://www.svgrepo.com/show/475656/google-color.svg"
+    alt="Google"
+    style={styles.googleIcon}
+  />
+  {loading ? "Processing..." : "Sign in with Google"}
+</button>
 
       <p style={styles.switchText}>
         {isSignup ? "Already have an account?" : "No account?"}{" "}

@@ -123,11 +123,6 @@ const payload = {
     ? initialData.createdAt
     : new Date(),
     searchableText,
-    // 🟢 Ranking Fields (NEW)
-  engagementScore: 0,
-  qualityScore: 50, // default neutral score
-  rankingScore: 100, // initial score
-  lastEngagementAt: serverTimestamp(),
 };
 
       if (isEdit && initialData?.id) {
